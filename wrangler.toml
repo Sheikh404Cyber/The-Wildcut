@@ -1,0 +1,17 @@
+name = "thewildcut"
+compatibility_date = "2026-10-01"
+pages_build_output_dir = "public"
+
+# After you create the D1 database and R2 bucket in the Cloudflare dashboard,
+# replace the two placeholder IDs below with your real ones
+# (Dashboard → Workers & Pages → thewildcut → Settings → Bindings shows them).
+# Binding NAMES must stay exactly: DB and MEDIA.
+
+[[d1_databases]]
+binding = "DB"
+database_name = "wildcut-db"
+database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+
+[[r2_buckets]]
+binding = "MEDIA"
+bucket_name = "wildcut-media"

@@ -1,0 +1,8 @@
+User-agent: *
+Allow: /
+Disallow: /admin
+Disallow: /api/
+
+# NOTE: If your live URL is not thewildcut.pages.dev, update the line below
+# to your real URL after deployment (same change in DEPLOYMENT_GUIDE_BN.md).
+Sitemap: https://thewildcut.pages.dev/sitemap.xml
