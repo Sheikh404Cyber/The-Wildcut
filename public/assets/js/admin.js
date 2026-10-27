@@ -113,11 +113,13 @@ document.querySelectorAll('#tabs button').forEach((btn) => {
 
 function switchTab(name) {
   document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
-  ['dashboard', 'news', 'editor'].forEach((t) => {
+  ['dashboard', 'news', 'editor', 'analytics', 'settings'].forEach((t) => {
     $('tab-' + t).classList.toggle('hidden', t !== name);
   });
   if (name === 'dashboard') loadDashboard();
   if (name === 'news') { state.newsPage = 1; loadNewsList(true); }
+  if (name === 'analytics') loadAnalytics();
+  if (name === 'settings') loadSettingsTab();
 }
 
 /* ---------------- Dashboard ---------------- */
@@ -254,29 +256,8 @@ function renderExtraImages() {
   );
 }
 
-async function uploadFile(file, alt = '') {
-  const form = new FormData();
-  form.append('file', file);
-  form.append('alt', alt);
-  const res = await fetch('/api/admin/upload', { method: 'POST', body: form });
-  const data = await res.json();
-  if (!res.ok || !data.ok) throw new Error(data.error || 'Upload failed');
-  return data;
-}
-
-$('f-cover-file').addEventListener('change', async (ev) => {
-  const file = ev.target.files[0];
-  if (!file) return;
-  try {
-    toast('ছবি আপলোড হচ্ছে…');
-    const data = await uploadFile(file);
-    $('f-cover-url').value = data.url;
-    const prev = $('cover-preview');
-    prev.src = data.url; prev.classList.remove('hidden');
-    toast('কভার ছবি আপলোড হয়েছে');
-  } catch (err) { toast(err.message); }
-  ev.target.value = '';
-});
+// Direct photo upload is unavailable (no file storage), so the editor works
+// with image URLs only — the upload inputs were replaced by a locked notice.
 
 $('f-cover-url').addEventListener('input', () => {
   const value = $('f-cover-url').value.trim();
@@ -290,16 +271,29 @@ $('f-cover-url').addEventListener('input', () => {
   }
 });
 
-$('f-extra-file').addEventListener('change', async (ev) => {
-  const file = ev.target.files[0];
-  if (!file) return;
-  try {
-    toast('ছবি আপলোড হচ্ছে…');
-    const data = await uploadFile(file);
-    state.extraImages.push({ url: data.url, alt: '' });
-    renderExtraImages();
-  } catch (err) { toast(err.message); }
-  ev.target.value = '';
+$('btn-extra-add').addEventListener('click', () => {
+  const url = $('f-extra-url').value.trim();
+  if (!url) { toast('আগে অতিরিক্ত ছবির URL বসান'); return; }
+  state.extraImages.push({ url, alt: '' });
+  $('f-extra-url').value = '';
+  renderExtraImages();
+});
+
+/* -------- Author info row (editor) — profile photo shows automatically -------- */
+function paintAuthorInfo() {
+  const u = state.user;
+  if (!u) return;
+  $('author-info-name').textContent = u.name || '';
+  const img = $('author-info-avatar');
+  const fallback = '/assets/img/logo-cream.jpg';
+  img.onerror = () => { if (!img.src.endsWith('logo-cream.jpg')) img.src = fallback; };
+  img.src = u.avatar_url || fallback;
+}
+
+$('btn-change-photo').addEventListener('click', () => {
+  switchTab('settings');
+  const card = $('profile-card');
+  if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
 
 function jsSlug(text) {
@@ -356,6 +350,7 @@ async function openEditor(id) {
     } catch (err) { toast(err.message); }
   }
   state.editorDirty = false;
+  paintAuthorInfo();
   switchTab('editor');
 }
 
@@ -420,6 +415,270 @@ $('btn-unpublish').addEventListener('click', () => {
   $('f-status').value = 'draft';
   syncPublishedAt();
   saveNews();
+});
+
+/* ---------------- Analytics tab ---------------- */
+let analyticsRange = '7d';
+
+document.querySelectorAll('#analytics-ranges button').forEach((btn) => {
+  btn.addEventListener('click', () => { analyticsRange = btn.dataset.range; loadAnalytics(); });
+});
+
+/** Animate a KPI number counting up to its real value. */
+function countUp(el, to) {
+  const target = Number(to) || 0;
+  const duration = 700;
+  const t0 = performance.now();
+  function frame(t) {
+    const p = Math.min(1, (t - t0) / duration);
+    el.textContent = Math.round(target * (1 - Math.pow(1 - p, 3)));
+    if (p < 1) requestAnimationFrame(frame);
+  }
+  requestAnimationFrame(frame);
+}
+
+function chartLabelText(label, unit) {
+  if (unit === 'hour') return `${label.slice(11)}:00`;
+  const d = new Date(`${label}T00:00:00Z`);
+  try {
+    return new Intl.DateTimeFormat('bn-BD', { day: 'numeric', month: 'short', timeZone: 'UTC' }).format(d);
+  } catch { return label; }
+}
+
+async function loadAnalytics() {
+  document.querySelectorAll('#analytics-ranges button').forEach((b) =>
+    b.classList.toggle('active', b.dataset.range === analyticsRange));
+  try {
+    const data = await api(`/api/admin/analytics?range=${encodeURIComponent(analyticsRange)}`);
+    countUp($('an-views'), data.totals.views_in_range);
+    countUp($('an-alltime'), data.totals.total_views_all_time);
+    countUp($('an-posts'), data.totals.posts_in_range);
+    countUp($('an-total-posts'), data.totals.total_posts);
+    // Honest empty state: view logging only started today, so a range with no
+    // tracked views yet says so instead of dressing up invented numbers.
+    $('analytics-empty').classList.toggle('hidden', data.totals.views_in_range > 0);
+
+    const chart = $('analytics-chart');
+    chart.classList.toggle('wide', data.series.length > 31);
+    const max = Math.max(1, ...data.series.map((p) => p.views));
+    const showVals = data.series.length <= 31;
+    chart.innerHTML = data.series.map((p) => `
+      <div class="chart-col" title="${esc(chartLabelText(p.label, data.unit))}: ${p.views} ভিউ">
+        ${showVals ? `<span class="chart-val">${p.views || ''}</span>` : ''}
+        <div class="chart-bar" data-h="${Math.max(2, Math.round((p.views / max) * 92))}"></div>
+        <span class="chart-label">${esc(chartLabelText(p.label, data.unit))}</span>
+      </div>`).join('');
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      chart.querySelectorAll('.chart-bar').forEach((b) => { b.style.height = `${b.dataset.h}%`; });
+    }));
+
+    $('analytics-top').innerHTML = data.top_posts_in_range.length
+      ? data.top_posts_in_range.map((p, i) => `<div class="analytics-row"><span class="analytics-rank">${i + 1}</span><a href="/news/${encodeURIComponent(p.slug)}" target="_blank" rel="noopener">${esc(p.title)}</a><strong>${p.views} ভিউ</strong></div>`).join('')
+      : '<p class="muted">এই সময়ে এখনো কোনো ভিউ আসেনি।</p>';
+
+    const cmax = Math.max(1, ...data.by_category_in_range.map((c) => c.views));
+    $('analytics-cats').innerHTML = data.by_category_in_range.length
+      ? data.by_category_in_range.map((c) => `
+        <div class="catbar-row">
+          <span class="catbar-name">${esc(c.category_name)}</span>
+          <span class="catbar-track"><span class="catbar-fill" data-w="${Math.round((c.views / cmax) * 100)}"></span></span>
+          <strong>${c.views}</strong>
+        </div>`).join('')
+      : '<p class="muted">এই সময়ে কোনো ক্যাটাগরিতে ভিউ আসেনি।</p>';
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      $('analytics-cats').querySelectorAll('.catbar-fill').forEach((b) => { b.style.width = `${b.dataset.w}%`; });
+    }));
+  } catch (err) { toast(err.message); }
+}
+
+/* ---------------- Settings tab: profile ---------------- */
+// null = unchanged; '' = clear; anything else = the value to save.
+const profileState = { avatar: null };
+
+function fillProfile() {
+  const u = state.user;
+  if (!u) return;
+  $('prof-name').value = u.name || '';
+  profileState.avatar = null;
+  const av = u.avatar_url || '';
+  $('prof-avatar-url').value = av.startsWith('data:') ? '' : av;
+  $('prof-avatar-preview').src = av || '/assets/img/logo-cream.jpg';
+}
+
+/** Read a photo file, center-crop it square at ≤256px, return a JPEG data URL. */
+function fileToAvatarDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = () => reject(new Error('read failed'));
+    reader.onload = () => {
+      const img = new Image();
+      img.onerror = () => reject(new Error('bad image'));
+      img.onload = () => {
+        try {
+          const size = 256;
+          const canvas = document.createElement('canvas');
+          canvas.width = size;
+          canvas.height = size;
+          const ctx = canvas.getContext('2d');
+          const side = Math.min(img.naturalWidth, img.naturalHeight);
+          const sx = (img.naturalWidth - side) / 2;
+          const sy = (img.naturalHeight - side) / 2;
+          ctx.drawImage(img, sx, sy, side, side, 0, 0, size, size);
+          resolve(canvas.toDataURL('image/jpeg', 0.82));
+        } catch (err) { reject(err); }
+      };
+      img.src = reader.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+$('prof-avatar-file').addEventListener('change', async (ev) => {
+  const file = ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  try {
+    const dataUrl = await fileToAvatarDataUrl(file);
+    profileState.avatar = dataUrl;
+    $('prof-avatar-preview').src = dataUrl;
+    $('prof-avatar-url').value = '';
+    toast('ছবি তৈরি হয়েছে — এখন "প্রোফাইল সংরক্ষণ করুন" চাপুন');
+  } catch { toast('ছবিটি পড়া যায়নি — অন্য একটি ছবি চেষ্টা করুন'); }
+});
+
+$('prof-avatar-url').addEventListener('input', () => {
+  const v = $('prof-avatar-url').value.trim();
+  profileState.avatar = v;
+  $('prof-avatar-preview').src = v || '/assets/img/logo-cream.jpg';
+});
+
+$('prof-save').addEventListener('click', async () => {
+  const msg = $('prof-msg');
+  const name = $('prof-name').value.trim();
+  if (!name) { showMsg(msg, 'নাম দিতে হবে', false); return; }
+  const avatar = profileState.avatar !== null ? profileState.avatar : (state.user?.avatar_url || '');
+  try {
+    const data = await api('/api/admin/me', {
+      method: 'PUT',
+      body: JSON.stringify({ name, avatar_url: avatar }),
+    });
+    state.user = data.user;
+    $('who-line').textContent = `${data.user.name} · ${data.user.role} · `;
+    fillProfile();
+    paintAuthorInfo();
+    showMsg(msg, 'প্রোফাইল সেভ হয়েছে। এই ছবিই এখন থেকে আপনার সব খবরে নিজে নিজে দেখা যাবে।', true);
+  } catch (err) { showMsg(msg, err.message, false); }
+});
+
+/* ---------------- Settings tab: site settings + categories ---------------- */
+function loadSettingsTab() {
+  fillProfile();
+  loadCategoriesAdmin();
+  loadSiteSettings();
+}
+
+async function loadSiteSettings() {
+  try {
+    const s = await api('/api/admin/settings');
+    $('set-contact-email').value = s.contact_email || '';
+    $('set-contact-phone').value = s.contact_phone || '';
+    $('set-footer-text').value = s.footer_text || '';
+    $('set-about-text').value = s.about_text || '';
+    $('set-contact-text').value = s.contact_text || '';
+  } catch {
+    const note = 'এই অংশটি শুধু owner/admin দেখতে ও বদলাতে পারেন।';
+    showMsg($('contact-msg'), note, false);
+    showMsg($('texts-msg'), note, false);
+  }
+}
+
+$('contact-save').addEventListener('click', async () => {
+  try {
+    await api('/api/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify({
+        contact_email: $('set-contact-email').value,
+        contact_phone: $('set-contact-phone').value,
+      }),
+    });
+    showMsg($('contact-msg'), 'সেভ হয়েছে', true);
+  } catch (err) { showMsg($('contact-msg'), err.message, false); }
+});
+
+$('texts-save').addEventListener('click', async () => {
+  try {
+    await api('/api/admin/settings', {
+      method: 'PUT',
+      body: JSON.stringify({
+        footer_text: $('set-footer-text').value,
+        about_text: $('set-about-text').value,
+        contact_text: $('set-contact-text').value,
+      }),
+    });
+    showMsg($('texts-msg'), 'সেভ হয়েছে — সাইটে এখন থেকে এই লেখাই দেখাবে।', true);
+  } catch (err) { showMsg($('texts-msg'), err.message, false); }
+});
+
+async function loadCategoriesAdmin() {
+  const wrap = $('cat-list');
+  try {
+    const data = await api('/api/admin/categories');
+    if (!data.categories.length) {
+      wrap.innerHTML = '<p class="muted">কোনো ক্যাটাগরি নেই।</p>';
+      return;
+    }
+    wrap.innerHTML = data.categories.map((c) => `
+      <div class="cat-row">
+        <div>
+          <input type="text" value="${esc(c.name)}" data-f="name" maxlength="100" aria-label="ক্যাটাগরির নাম">
+          <span class="cat-slug">/${esc(c.slug)} · ${c.news_count}টি খবর</span>
+        </div>
+        <input type="text" value="${esc(c.description || '')}" data-f="description" maxlength="300" placeholder="বিবরণ" aria-label="বিবরণ">
+        <input type="number" value="${c.sort_order ?? 0}" data-f="sort_order" aria-label="ক্রম">
+        <button class="btn ghost small" type="button" data-save="${c.id}">সেভ</button>
+      </div>`).join('');
+    wrap.querySelectorAll('[data-save]').forEach((btn) =>
+      btn.addEventListener('click', async () => {
+        const row = btn.closest('.cat-row');
+        const body = {
+          name: row.querySelector('[data-f="name"]').value,
+          description: row.querySelector('[data-f="description"]').value,
+          sort_order: parseInt(row.querySelector('[data-f="sort_order"]').value, 10) || 0,
+        };
+        try {
+          await api(`/api/admin/categories/${btn.dataset.save}`, { method: 'PUT', body: JSON.stringify(body) });
+          toast('ক্যাটাগরি সেভ হয়েছে');
+          loadCategoriesAdmin();
+          loadCategoryOptions();
+        } catch (err) { toast(err.message); }
+      })
+    );
+  } catch (err) {
+    wrap.innerHTML = `<p class="muted">${esc(err.message)}</p>`;
+  }
+}
+
+$('cat-new-name').addEventListener('input', () => {
+  $('cat-new-slug').value = jsSlug($('cat-new-name').value);
+});
+
+$('cat-add').addEventListener('click', async () => {
+  const body = {
+    name: $('cat-new-name').value,
+    slug: $('cat-new-slug').value,
+    description: $('cat-new-desc').value,
+    sort_order: parseInt($('cat-new-sort').value, 10) || 0,
+  };
+  try {
+    await api('/api/admin/categories', { method: 'POST', body: JSON.stringify(body) });
+    $('cat-new-name').value = '';
+    $('cat-new-slug').value = '';
+    $('cat-new-desc').value = '';
+    $('cat-new-sort').value = '0';
+    showMsg($('cat-msg'), 'নতুন ক্যাটাগরি যোগ হয়েছে', true);
+    loadCategoriesAdmin();
+    loadCategoryOptions();
+  } catch (err) { showMsg($('cat-msg'), err.message, false); }
 });
 
 /* ---------------- Theme toggle (same key as the public site) ---------------- */

@@ -61,9 +61,11 @@
   </div>
 
   <nav class="tabs" id="tabs" aria-label="অ্যাডমিন নেভিগেশন">
-    <button data-tab="dashboard" class="active" type="button">ড্যাশবোর্ড</button>
-    <button data-tab="news" type="button">সব খবর</button>
-    <button data-tab="editor" type="button">নতুন খবর</button>
+    <button data-tab="dashboard" class="active" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="3.5" width="7" height="7" rx="1.5"/><rect x="3.5" y="13.5" width="7" height="7" rx="1.5"/><rect x="13.5" y="13.5" width="7" height="7" rx="1.5"/></svg>ড্যাশবোর্ড</button>
+    <button data-tab="news" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H17v15.5H5.5A1.5 1.5 0 0 1 4 18Z"/><path d="M17 8.5h1.5A1.5 1.5 0 0 1 20 10v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2"/><path d="M7.5 8.5h6M7.5 12h6M7.5 15.5h4"/></svg>সব খবর</button>
+    <button data-tab="editor" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14.5 5.5 4 4L8 20H4v-4L14.5 5.5Z"/><path d="m12.5 7.5 4 4"/></svg>নতুন খবর</button>
+    <button data-tab="analytics" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-6M11 20V6M17 20v-9"/><path d="M3 20h18"/></svg>অ্যানালিটিক্স</button>
+    <button data-tab="settings" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1"/></svg>সেটিংস</button>
   </nav>
 
   <!-- Dashboard -->
@@ -143,12 +145,25 @@
       <div class="editor-section">
         <h4>ছবি</h4>
       <label>কভার ছবি</label>
-      <input type="file" id="f-cover-file" accept="image/jpeg,image/png,image/webp,image/gif">
-      <input type="text" id="f-cover-url" placeholder="ছবির URL (আপলোড করলে নিজে নিজে বসবে)" style="margin-top:0.5rem">
+      <div class="lock-card" role="note">
+        <span class="lock-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg></span>
+        <div>
+          <strong>সরাসরি ছবি আপলোড এখন available না</strong>
+          <p>ছবি আপলোডের সুবিধাটি এই মুহূর্তে বন্ধ আছে। তার বদলে নিচের ঘরে ছবির URL (লিংক) বসান — লিংক দিলেই ওয়েবসাইটে ছবি দেখা যাবে।</p>
+        </div>
+      </div>
+      <input type="text" id="f-cover-url" placeholder="ছবির URL (লিংক) বসান" style="margin-top:0.5rem">
       <img class="thumb hidden" id="cover-preview" alt="">
 
       <label>অতিরিক্ত ছবি</label>
-      <input type="file" id="f-extra-file" accept="image/jpeg,image/png,image/webp,image/gif">
+      <div class="lock-card small" role="note">
+        <span class="lock-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="10.5" width="14" height="9.5" rx="2"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/></svg></span>
+        <p>অতিরিক্ত ছবিও আপলোডের বদলে URL (লিংক) দিয়ে যোগ করুন।</p>
+      </div>
+      <div class="inline-add">
+        <input type="text" id="f-extra-url" placeholder="অতিরিক্ত ছবির URL (লিংক)">
+        <button class="btn ghost" type="button" id="btn-extra-add">যোগ করুন</button>
+      </div>
       <div class="extra-list" id="extra-list"></div>
 
       </div>
@@ -167,6 +182,11 @@
             <option value="scheduled">Scheduled</option>
           </select>
         </div>
+      </div>
+      <div class="author-info" id="author-info">
+        <img id="author-info-avatar" src="/assets/img/logo-cream.jpg" alt="">
+        <p><strong id="author-info-name"></strong><br><span class="muted">লেখকের ঘরটি খালি রাখলে এই প্রোফাইল ছবিটি প্রতিটি খবরে আপনার নামের পাশে নিজে নিজে দেখা যাবে — প্রতিবার আলাদা করে ছবি দিতে হবে না।</span></p>
+        <button class="btn ghost small" type="button" id="btn-change-photo">ছবি বদলান</button>
       </div>
       <div id="published-at-wrap" style="display:none">
         <label id="published-at-label">প্রকাশের তারিখ ও সময়</label>
@@ -207,7 +227,122 @@
     </form>
   </section>
 
+  <!-- Analytics -->
+  <section class="panel hidden" id="tab-analytics">
+    <div class="range-pills" id="analytics-ranges" role="group" aria-label="সময়ের পরিসর">
+      <button type="button" data-range="24h">সর্বশেষ ২৪ ঘণ্টা</button>
+      <button type="button" data-range="7d" class="active">৭ দিন</button>
+      <button type="button" data-range="28d">২৮ দিন</button>
+      <button type="button" data-range="60d">৬০ দিন</button>
+      <button type="button" data-range="90d">৯০ দিন</button>
+    </div>
+    <p class="msg info hidden" id="analytics-empty">আজ থেকে ভিউয়ের হিসাব জমা হচ্ছে — কিছুক্ষণ পর থেকে এখানে আসল তথ্য দেখা যাবে।</p>
+    <div class="stat-grid">
+      <div class="stat kpi-card"><span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg></span><div class="kpi-copy"><b id="an-views">–</b><span>এই সময়ে মোট ভিউ</span></div></div>
+      <div class="stat kpi-card"><span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg></span><div class="kpi-copy"><b id="an-alltime">–</b><span>সর্বমোট ভিউ (সব সময়)</span></div></div>
+      <div class="stat kpi-card"><span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H17v15.5H5.5A1.5 1.5 0 0 1 4 18Z"/><path d="M17 8.5h1.5A1.5 1.5 0 0 1 20 10v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2"/></svg></span><div class="kpi-copy"><b id="an-posts">–</b><span>এই সময়ে ভিউ পাওয়া খবর</span></div></div>
+      <div class="stat kpi-card"><span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg></span><div class="kpi-copy"><b id="an-total-posts">–</b><span>মোট খবর</span></div></div>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <h3 class="card-title">সময় অনুযায়ী ভিউ</h3>
+      <div class="chart" id="analytics-chart"></div>
+    </div>
+    <div class="card">
+      <h3 class="card-title">এই সময়ে সর্বাধিক পঠিত খবর</h3>
+      <div class="analytics-list" id="analytics-top"></div>
+    </div>
+    <div class="card">
+      <h3 class="card-title">ক্যাটাগরি অনুযায়ী ভিউ</h3>
+      <div id="analytics-cats"></div>
+    </div>
+  </section>
+
+  <!-- Settings -->
+  <section class="panel hidden" id="tab-settings">
+    <div class="card" id="profile-card">
+      <h3 class="card-title">আমার প্রোফাইল</h3>
+      <div class="profile-head">
+        <img class="profile-avatar" id="prof-avatar-preview" src="/assets/img/logo-cream.jpg" alt="আপনার প্রোফাইল ছবি">
+        <p class="muted" style="margin:0">একবার ছবি দিলেই সেভ হয়ে থাকবে — পরে প্রতিটি খবরে নিজে নিজে দেখা যাবে।</p>
+      </div>
+      <label>আপনার নাম (খবরে লেখক হিসেবে দেখাবে)</label>
+      <input type="text" id="prof-name" maxlength="100">
+      <label>প্রোফাইল ছবি — ফাইল থেকে বেছে নিন</label>
+      <input type="file" id="prof-avatar-file" accept="image/jpeg,image/png,image/webp">
+      <label>অথবা ছবির URL (লিংক)</label>
+      <input type="text" id="prof-avatar-url" placeholder="https://… বা /media/…" maxlength="500">
+      <div class="editor-actions">
+        <button class="btn" type="button" id="prof-save">প্রোফাইল সংরক্ষণ করুন</button>
+      </div>
+      <div class="msg hidden" id="prof-msg"></div>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title">যোগাযোগ</h3>
+      <div class="two-col">
+        <div>
+          <label>যোগাযোগের ইমেইল</label>
+          <input type="email" id="set-contact-email" maxlength="120">
+        </div>
+        <div>
+          <label>যোগাযোগের ফোন</label>
+          <input type="text" id="set-contact-phone" maxlength="30">
+        </div>
+      </div>
+      <div class="editor-actions">
+        <button class="btn" type="button" id="contact-save">সংরক্ষণ করুন</button>
+      </div>
+      <div class="msg hidden" id="contact-msg"></div>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title">সাইটের লেখা</h3>
+      <label>Footer-এর লেখা</label>
+      <textarea id="set-footer-text" rows="2" maxlength="5000"></textarea>
+      <label>আমাদের সম্পর্কে (About) পেজের লেখা</label>
+      <textarea id="set-about-text" rows="5" maxlength="5000"></textarea>
+      <label>যোগাযোগ পেজের লেখা</label>
+      <textarea id="set-contact-text" rows="3" maxlength="5000"></textarea>
+      <div class="editor-actions">
+        <button class="btn" type="button" id="texts-save">লেখা সংরক্ষণ করুন</button>
+      </div>
+      <div class="msg hidden" id="texts-msg"></div>
+    </div>
+
+    <div class="card">
+      <h3 class="card-title">ক্যাটাগরি</h3>
+      <div id="cat-list"></div>
+      <h4 class="subsection-title">নতুন ক্যাটাগরি যোগ করুন</h4>
+      <div class="two-col">
+        <div>
+          <label>নাম</label>
+          <input type="text" id="cat-new-name" maxlength="100">
+        </div>
+        <div>
+          <label>Slug (URL-এ যা দেখাবে)</label>
+          <input type="text" id="cat-new-slug" maxlength="120">
+        </div>
+      </div>
+      <div class="two-col">
+        <div>
+          <label>বিবরণ</label>
+          <input type="text" id="cat-new-desc" maxlength="300">
+        </div>
+        <div>
+          <label>ক্রম (sort order)</label>
+          <input type="number" id="cat-new-sort" value="0">
+        </div>
+      </div>
+      <div class="editor-actions">
+        <button class="btn" type="button" id="cat-add">ক্যাটাগরি যোগ করুন</button>
+      </div>
+      <div class="msg hidden" id="cat-msg"></div>
+    </div>
+  </section>
+
 </div>
+
+<footer class="admin-credit">Developed by <a href="https://web.facebook.com/AMIN.SHEIKH.404" target="_blank" rel="noopener">AMIN SHEIKH</a></footer>
 
 <div id="toast" class="hidden"></div>
 <script src="/assets/js/admin.js"></script>

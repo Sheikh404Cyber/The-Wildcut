@@ -3,7 +3,7 @@ import { renderArticle, renderNotFound } from '../lib/render.js';
 import { publishDue } from '../lib/publishDue.js';
 
 // GET /news/<slug> — server-rendered article page (Facebook/SEO friendly).
-export async function onRequestGet({ request, env, params }) {
+export async function onRequestGet({ request, env, params, waitUntil }) {
   const origin = new URL(request.url).origin;
   try {
     await publishDue(env.DB);
@@ -24,12 +24,26 @@ export async function onRequestGet({ request, env, params }) {
       .first();
     if (!news) return html(renderNotFound(origin), 404, 'no-store');
 
+    // An avatar stored as a data URL is served through the avatar endpoint
+    // (render.js would otherwise mangle it into a broken absolute URL).
+    if (news.author_avatar && news.author_avatar.startsWith('data:') && news.created_by) {
+      news.author_avatar = `/api/public/avatar/${news.created_by}`;
+    }
+
     // Count the view (admin analytics only — never shown on the public site).
     // Fire-and-forget: a failed count must never break the article page.
     env.DB.prepare('UPDATE news SET views = views + 1 WHERE id = ?')
       .bind(news.id)
       .run()
       .catch(() => {});
+
+    // Log the view event for the Analytics tab's time ranges (24h / 7 / 28 /
+    // 60 / 90 days). Also fire-and-forget, via waitUntil when available.
+    const logView = env.DB.prepare('INSERT INTO news_views (news_id) VALUES (?)')
+      .bind(news.id)
+      .run()
+      .catch(() => {});
+    if (typeof waitUntil === 'function') waitUntil(logView);
 
     const category = news.category_id
       ? { name: news.category_name, slug: news.category_slug }

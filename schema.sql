@@ -50,6 +50,12 @@ CREATE TABLE IF NOT EXISTS news (
   published_at     TEXT
 );
 
+CREATE TABLE IF NOT EXISTS news_views (
+  id        INTEGER PRIMARY KEY AUTOINCREMENT,
+  news_id   INTEGER NOT NULL REFERENCES news(id) ON DELETE CASCADE,
+  viewed_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
 CREATE TABLE IF NOT EXISTS sessions (
   id         INTEGER PRIMARY KEY AUTOINCREMENT,
   user_id    INTEGER NOT NULL REFERENCES admin_users(id) ON DELETE CASCADE,
@@ -83,6 +89,8 @@ CREATE INDEX IF NOT EXISTS idx_news_slug        ON news(slug);
 CREATE INDEX IF NOT EXISTS idx_news_status_pub  ON news(status, published_at DESC);
 CREATE INDEX IF NOT EXISTS idx_news_category    ON news(category_id);
 CREATE INDEX IF NOT EXISTS idx_news_featured    ON news(featured, status);
+CREATE INDEX IF NOT EXISTS idx_news_views_at      ON news_views(viewed_at);
+CREATE INDEX IF NOT EXISTS idx_news_views_news_at ON news_views(news_id, viewed_at);
 CREATE INDEX IF NOT EXISTS idx_sessions_token   ON sessions(token_hash);
 CREATE INDEX IF NOT EXISTS idx_attempts_ip_time ON login_attempts(ip, attempted_at);
 

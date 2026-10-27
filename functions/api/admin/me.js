@@ -13,8 +13,14 @@ export async function onRequestGet({ request, env }) {
   }
 }
 
-// Update your OWN profile: display name + avatar (avatar files are uploaded
-// separately through /api/admin/upload; here we only store the URL).
+// Update your OWN profile: display name + avatar. The avatar is stored once on
+// the account and then shown automatically with every news byline — either a
+// /media/ path, a safe http(s) URL, or a small image sent as a data URL
+// (there is no file storage, so the panel downscales photos to a ≤256px JPEG
+// data URL; it is stored as-is and served via /api/public/avatar/<id>).
+const AVATAR_DATA_URL_RE = /^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/=]+$/;
+const AVATAR_DATA_URL_MAX = 200000;
+
 export async function onRequestPut({ request, env }) {
   try {
     if (!sameOrigin(request)) return fail(403, 'Invalid origin');
@@ -24,9 +30,16 @@ export async function onRequestPut({ request, env }) {
     const body = await readJson(request);
     const name = cleanStr(body?.name, 100);
     if (!name) return fail(400, 'নাম দিতে হবে');
-    const avatar = cleanStr(body?.avatar_url, 500);
-    if (avatar && !avatar.startsWith('/media/') && !isSafeUrl(avatar)) {
-      return fail(400, 'ছবির URL সঠিক নয়');
+    let avatar = String(body?.avatar_url ?? '').trim();
+    if (avatar.startsWith('data:image/')) {
+      if (avatar.length > AVATAR_DATA_URL_MAX || !AVATAR_DATA_URL_RE.test(avatar)) {
+        return fail(400, 'ছবিটি সঠিক নয় বা বেশি বড়');
+      }
+    } else {
+      avatar = cleanStr(avatar, 500);
+      if (avatar && !avatar.startsWith('/media/') && !isSafeUrl(avatar)) {
+        return fail(400, 'ছবির URL সঠিক নয়');
+      }
     }
 
     await env.DB.prepare('UPDATE admin_users SET name = ?, avatar_url = ?, updated_at = ? WHERE id = ?')

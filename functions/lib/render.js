@@ -186,7 +186,6 @@ ${bodyHtml}
     </div>
   </div>
   <p>© 2026–2031 The Wildcut. All rights reserved.</p>
-  <p>Developed by AMIN SHEIKH</p>
 </footer>
 <script src="/assets/js/app.js"></script>
 </body>

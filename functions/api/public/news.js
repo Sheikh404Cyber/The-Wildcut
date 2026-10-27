@@ -33,7 +33,7 @@ export async function onRequestGet({ request, env }) {
     }
 
     const sql = `
-      SELECT n.id, n.title, n.slug, n.excerpt, n.cover_image_url, n.author,
+      SELECT n.id, n.title, n.slug, n.excerpt, n.cover_image_url, n.author, n.created_by,
              COALESCE(NULLIF(n.author, ''), u.name) AS author_name,
              CASE WHEN n.author <> '' THEN '' ELSE COALESCE(u.avatar_url, '') END AS author_avatar,
              n.featured, n.published_at, c.name AS category_name, c.slug AS category_slug
@@ -46,8 +46,18 @@ export async function onRequestGet({ request, env }) {
 
     const { results } = await env.DB.prepare(sql).bind(...binds, limit + 1, offset).all();
     const hasMore = results.length > limit;
+    // Avatars stored as data URLs are served through the avatar endpoint
+    // instead (a raw data URL would be huge in list JSON); created_by is an
+    // internal id and is not exposed in the public response.
+    const news = results.slice(0, limit).map((row) => {
+      const { created_by, ...rest } = row;
+      if (rest.author_avatar && rest.author_avatar.startsWith('data:') && created_by) {
+        rest.author_avatar = `/api/public/avatar/${created_by}`;
+      }
+      return rest;
+    });
     return json(
-      { ok: true, news: results.slice(0, limit), page, hasMore },
+      { ok: true, news, page, hasMore },
       200,
       { 'Cache-Control': 'public, max-age=60' }
     );

@@ -136,8 +136,10 @@ function initHeader() {
 
   const themeToggle = document.getElementById('theme-toggle');
   if (themeToggle) {
+    // The switch knob/icons are pure CSS driven by [data-theme]; JS only
+    // flips the theme and keeps the switch's aria-checked in sync.
     const paint = () => {
-      themeToggle.textContent = document.documentElement.dataset.theme === 'dark' ? '☀️' : '🌙';
+      themeToggle.setAttribute('aria-checked', String(document.documentElement.dataset.theme === 'dark'));
     };
     paint();
     themeToggle.addEventListener('click', () => {
@@ -164,6 +166,88 @@ async function initTicker() {
     track.innerHTML = half + half; // duplicated for a seamless loop
     wrap.hidden = false;
   } catch { /* ticker is decoration — stay hidden on error */ }
+}
+
+/* ---------------- Hero slider ---------------- */
+function heroSlideHtml(n, active) {
+  return `<a class="hero-slide${active ? ' is-active' : ''}" href="/news/${encodeURIComponent(n.slug)}"${active ? '' : ' aria-hidden="true" tabindex="-1"'}>
+    ${
+      n.cover_image_url
+        ? `<img class="hero-bg" src="${esc(n.cover_image_url)}" alt="" ${active ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async" ${IMG_FALLBACK}>`
+        : ''
+    }
+    <div class="hero-content">
+      ${n.category_name ? `<span class="chip">${esc(n.category_name)}</span>` : ''}
+      <h1>${esc(n.title)}</h1>
+      ${n.excerpt ? `<p class="hero-excerpt">${esc(n.excerpt)}</p>` : ''}
+      ${
+        n.author_name
+          ? `<p class="hero-byline"><img class="byline-avatar" src="${esc(n.author_avatar || '/assets/img/logo-cream.jpg')}" alt="" ${IMG_FALLBACK}><span>লিখেছেন <span class="byline-name">${esc(n.author_name)}</span></span></p>`
+          : ''
+      }
+      <p><time>${esc(bnDate(n.published_at))}</time></p>
+    </div>
+  </a>`;
+}
+
+function buildHeroSlider(heroEl, posts) {
+  heroEl.innerHTML =
+    posts.map((n, i) => heroSlideHtml(n, i === 0)).join('') +
+    (posts.length > 1
+      ? `<div class="hero-dots">${posts
+          .map((_, i) => `<button class="hero-dot${i === 0 ? ' is-active' : ''}" type="button" data-slide="${i}" aria-label="খবর ${i + 1}"></button>`)
+          .join('')}</div>`
+      : '');
+  if (posts.length < 2) return;
+
+  const slides = Array.from(heroEl.querySelectorAll('.hero-slide'));
+  const dots = Array.from(heroEl.querySelectorAll('.hero-dot'));
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  let idx = 0;
+  let timer = null;
+  let resumeTimer = null;
+
+  const go = (next) => {
+    slides[idx].classList.remove('is-active');
+    slides[idx].setAttribute('aria-hidden', 'true');
+    slides[idx].setAttribute('tabindex', '-1');
+    dots[idx]?.classList.remove('is-active');
+    idx = (next + slides.length) % slides.length;
+    slides[idx].classList.add('is-active');
+    slides[idx].removeAttribute('aria-hidden');
+    slides[idx].removeAttribute('tabindex');
+    dots[idx]?.classList.add('is-active');
+  };
+  const start = () => {
+    if (reduceMotion || timer) return;
+    timer = setInterval(() => go(idx + 1), 3000);
+  };
+  const stop = () => {
+    if (timer) clearInterval(timer);
+    timer = null;
+  };
+
+  dots.forEach((d) =>
+    d.addEventListener('click', () => {
+      stop();
+      go(Number(d.dataset.slide));
+      start();
+    })
+  );
+  heroEl.addEventListener('mouseenter', stop);
+  heroEl.addEventListener('mouseleave', start);
+  heroEl.addEventListener('pointerdown', () => {
+    stop();
+    if (resumeTimer) clearTimeout(resumeTimer);
+  });
+  heroEl.addEventListener('pointerup', () => {
+    if (resumeTimer) clearTimeout(resumeTimer);
+    resumeTimer = setTimeout(start, 5000);
+  });
+  heroEl.addEventListener('focusin', stop);
+  heroEl.addEventListener('focusout', start);
+  document.addEventListener('visibilitychange', () => (document.hidden ? stop() : start()));
+  start();
 }
 
 /* ---------------- Homepage ---------------- */
@@ -203,29 +287,27 @@ async function initHome() {
     } catch { /* categories are optional decoration on the homepage */ }
   }
 
-  // Hero: featured news, else latest
+  // Hero slider: featured posts, topped up with the latest when there are
+  // fewer than 2 featured — at most 5 slides, auto-rotating every 3s.
   if (!searching) {
     try {
-      let hero = (await getJSON('/api/public/news?featured=1&limit=1')).news[0];
-      if (!hero) hero = (await getJSON('/api/public/news?limit=1')).news[0];
-      if (hero) {
-        heroEl.innerHTML = `
-          ${hero.cover_image_url ? `<img class="hero-bg" src="${esc(hero.cover_image_url)}" alt="" fetchpriority="high" decoding="async" ${IMG_FALLBACK}>` : ''}
-          <div class="hero-content">
-            ${hero.category_name ? `<span class="chip">${esc(hero.category_name)}</span>` : ''}
-            <h1>${esc(hero.title)}</h1>
-            ${hero.excerpt ? `<p class="hero-excerpt">${esc(hero.excerpt)}</p>` : ''}
-            ${
-              hero.author_name
-                ? `<p class="hero-byline"><img class="byline-avatar" src="${esc(hero.author_avatar || '/assets/img/logo-cream.jpg')}" alt="" ${IMG_FALLBACK}><span>লিখেছেন <span class="byline-name">${esc(hero.author_name)}</span></span></p>`
-                : ''
+      let posts = (await getJSON('/api/public/news?featured=1&limit=6')).news || [];
+      posts = posts.slice(0, 5);
+      if (posts.length < 2) {
+        try {
+          const latest = (await getJSON('/api/public/news?limit=6')).news || [];
+          const seen = new Set(posts.map((p) => p.id));
+          for (const p of latest) {
+            if (posts.length >= 5) break;
+            if (!seen.has(p.id)) {
+              posts.push(p);
+              seen.add(p.id);
             }
-            <p><time>${esc(bnDate(hero.published_at))}</time></p>
-          </div>`;
-        heroEl.href = `/news/${encodeURIComponent(hero.slug)}`;
-      } else {
-        heroEl.style.display = 'none';
+          }
+        } catch { /* the slider still works with whatever featured returned */ }
       }
+      if (posts.length) buildHeroSlider(heroEl, posts);
+      else heroEl.style.display = 'none';
     } catch {
       heroEl.style.display = 'none';
     }
@@ -315,13 +397,42 @@ async function initCategory() {
   await load();
 }
 
+/* ---------------- Site settings (fetched once per page) ---------------- */
+let settingsPromise = null;
+function getSettings() {
+  if (!settingsPromise) settingsPromise = getJSON('/api/public/settings').catch(() => ({}));
+  return settingsPromise;
+}
+
+/* ------- Admin-editable site text (footer / about / contact) ------- */
+async function initSiteText() {
+  const footerEl = document.querySelector('[data-site-text="footer_text"]');
+  const aboutEl = document.querySelector('[data-site-text="about_text"]');
+  const contactEl = document.querySelector('[data-site-text="contact_text"]');
+  if (!footerEl && !aboutEl && !contactEl) return;
+  const s = await getSettings();
+  if (footerEl && s.footer_text && String(s.footer_text).trim()) {
+    footerEl.textContent = String(s.footer_text).trim();
+  }
+  if (aboutEl && s.about_text && String(s.about_text).trim()) {
+    aboutEl.innerHTML = String(s.about_text)
+      .trim()
+      .split(/\n\s*\n/)
+      .map((p) => `<p>${esc(p.trim()).replace(/\n/g, '<br>')}</p>`)
+      .join('');
+  }
+  if (contactEl && s.contact_text && String(s.contact_text).trim()) {
+    contactEl.textContent = String(s.contact_text).trim();
+  }
+}
+
 /* ---------------- Contact page ---------------- */
 async function initContact() {
   const emailRow = document.getElementById('contact-email-row');
   const phoneRow = document.getElementById('contact-phone-row');
   if (!emailRow && !phoneRow) return;
   try {
-    const s = await getJSON('/api/public/settings');
+    const s = await getSettings();
     if (s.contact_email && emailRow) {
       const a = document.getElementById('contact-email');
       a.href = `mailto:${s.contact_email}`;
@@ -341,6 +452,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initHeader();
   initDynamicCategories();
   initTicker();
+  initSiteText();
   initHome();
   initCategory();
   initContact();
