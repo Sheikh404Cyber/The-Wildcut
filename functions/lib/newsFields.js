@@ -4,7 +4,9 @@ import { cleanStr, slugify, isSafeUrl, parseExtraImages, sqlTime } from './util.
 
 /**
  * Returns { fields } or { error }.
- * fields.status is 'draft' | 'published'; fields.published_at is SQL time or null.
+ * fields.status is 'draft' | 'published' | 'scheduled'; fields.published_at is
+ * SQL time (UTC, 'YYYY-MM-DD HH:MM:SS') or null. For 'scheduled', published_at
+ * is the future moment the scheduled-publish job will flip it to 'published'.
  */
 export function extractNewsFields(body, existing = null) {
   if (!body || typeof body !== 'object') return { error: 'Invalid request body' };
@@ -12,9 +14,10 @@ export function extractNewsFields(body, existing = null) {
   const title = cleanStr(body.title, 200);
   if (!title || title.length < 3) return { error: 'শিরোনাম দিতে হবে (কমপক্ষে ৩ অক্ষর)' };
 
-  const status = body.status === 'published' ? 'published' : 'draft';
+  const status =
+    body.status === 'published' ? 'published' : body.status === 'scheduled' ? 'scheduled' : 'draft';
   const content = String(body.content ?? '').slice(0, 100000);
-  if (status === 'published' && content.trim().length < 10) {
+  if (status !== 'draft' && content.trim().length < 10) {
     return { error: 'Publish করতে হলে খবরের মূল লেখা দিতে হবে' };
   }
 
@@ -32,7 +35,15 @@ export function extractNewsFields(body, existing = null) {
   }
 
   let publishedAt = existing ? existing.published_at : null;
-  if (status === 'published') {
+  if (status === 'scheduled') {
+    // The editor sends an ISO string (converted from the Dhaka-local
+    // datetime-local input in admin.js); store its UTC equivalent.
+    const d = body.published_at ? new Date(body.published_at) : null;
+    if (!d || Number.isNaN(d.getTime())) {
+      return { error: 'Schedule করতে হলে প্রকাশের তারিখ ও সময় দিতে হবে' };
+    }
+    publishedAt = sqlTime(d);
+  } else if (status === 'published') {
     if (body.published_at) {
       const d = new Date(body.published_at);
       if (Number.isNaN(d.getTime())) return { error: 'প্রকাশের তারিখ সঠিক নয়' };

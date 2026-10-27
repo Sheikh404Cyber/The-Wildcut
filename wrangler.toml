@@ -2,16 +2,18 @@ name = "thewildcut"
 compatibility_date = "2026-10-01"
 pages_build_output_dir = "public"
 
-# After you create the D1 database and R2 bucket in the Cloudflare dashboard,
-# replace the two placeholder IDs below with your real ones
-# (Dashboard → Workers & Pages → thewildcut → Settings → Bindings shows them).
-# Binding NAMES must stay exactly: DB and MEDIA.
+# Bindings. Binding NAMES must stay exactly: DB (and MEDIA once R2 exists).
+# D1 database "wildcut-db" was created 2026-10-27 and already holds all data.
 
 [[d1_databases]]
 binding = "DB"
 database_name = "wildcut-db"
-database_id = "REPLACE_WITH_YOUR_D1_DATABASE_ID"
+database_id = "b9d1c5a6-ad94-4f05-98c5-eb63992fde6c"
 
-[[r2_buckets]]
-binding = "MEDIA"
-bucket_name = "wildcut-media"
+# R2 (MEDIA binding) is NOT enabled yet: Cloudflare requires a payment card
+# to activate R2, and the account has none. Existing images are served as
+# static files from public/media/ instead. When a card is added and the
+# bucket "wildcut-media" is created, restore this block:
+# [[r2_buckets]]
+# binding = "MEDIA"
+# bucket_name = "wildcut-media"

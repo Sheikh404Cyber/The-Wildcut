@@ -21,6 +21,7 @@ CREATE TABLE IF NOT EXISTS admin_users (
   password_hash TEXT NOT NULL,
   password_salt TEXT NOT NULL,
   role          TEXT NOT NULL DEFAULT 'editor' CHECK (role IN ('owner','admin','editor')),
+  avatar_url    TEXT NOT NULL DEFAULT '',
   is_active     INTEGER NOT NULL DEFAULT 1,
   created_at    TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at    TEXT NOT NULL DEFAULT (datetime('now'))
@@ -41,7 +42,8 @@ CREATE TABLE IF NOT EXISTS news (
   seo_title        TEXT DEFAULT '',
   seo_description  TEXT DEFAULT '',
   featured         INTEGER NOT NULL DEFAULT 0,
-  status           TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','published')),
+  views            INTEGER NOT NULL DEFAULT 0,
+  status           TEXT NOT NULL DEFAULT 'draft' CHECK (status IN ('draft','published','scheduled')),
   created_by       INTEGER REFERENCES admin_users(id) ON DELETE SET NULL,
   created_at       TEXT NOT NULL DEFAULT (datetime('now')),
   updated_at       TEXT NOT NULL DEFAULT (datetime('now')),
@@ -60,6 +62,11 @@ CREATE TABLE IF NOT EXISTS login_attempts (
   id           INTEGER PRIMARY KEY AUTOINCREMENT,
   ip           TEXT NOT NULL,
   attempted_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE TABLE IF NOT EXISTS site_settings (
+  key   TEXT PRIMARY KEY,
+  value TEXT NOT NULL DEFAULT ''
 );
 
 CREATE TABLE IF NOT EXISTS media (
@@ -83,7 +90,6 @@ CREATE INDEX IF NOT EXISTS idx_attempts_ip_time ON login_attempts(ip, attempted_
 INSERT OR IGNORE INTO categories (name, slug, description, sort_order) VALUES
   ('বাংলাদেশ',              'bangladesh',               'বাংলাদেশের বন্যপ্রাণী সংবাদ',        1),
   ('আন্তর্জাতিক',           'international',            'বিশ্বের বন্যপ্রাণী সংবাদ',           2),
-  ('সাপ ও সরীসৃপ',          'snakes-reptiles',          'সাপ ও সরীসৃপ বিষয়ক সংবাদ',         3),
-  ('বন্যপ্রাণী উদ্ধার',       'wildlife-rescue',          'উদ্ধার ও পুনর্বাসনের গল্প',           4),
-  ('সংরক্ষণ ও পরিবেশ',       'conservation-environment', 'সংরক্ষণ, বন ও পরিবেশ',               5),
-  ('বিজ্ঞান ও প্রকৃতি',       'science-nature',           'বিজ্ঞান ও প্রকৃতির বিস্ময়',           6);
+  ('আইন ও নীতিমালা',         'law-policy',               'বন্যপ্রাণী আইন ও নীতিমালা বিষয়ক সংবাদ', 3),
+  ('প্রকৃতি ও পরিবেশ',       'conservation-environment', 'প্রকৃতি, সংরক্ষণ ও পরিবেশ',          4),
+  ('বিজ্ঞান ও গবেষণা',       'science-nature',           'বিজ্ঞান ও গবেষণা বিষয়ক সংবাদ',       5);

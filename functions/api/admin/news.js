@@ -20,7 +20,7 @@ export async function onRequestGet({ request, env }) {
 
     const where = [];
     const binds = [];
-    if (status === 'published' || status === 'draft') {
+    if (status === 'published' || status === 'draft' || status === 'scheduled') {
       where.push('n.status = ?');
       binds.push(status);
     }

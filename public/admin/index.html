@@ -7,7 +7,9 @@
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="/assets/img/logo-dark.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif:wght@400;600;700&family=Noto+Serif+Bengali:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script>(function(){try{var t=localStorage.getItem('wc-theme');if(!t)t=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';document.documentElement.dataset.theme=t;}catch(e){document.documentElement.dataset.theme='light';}})();</script>
 <link rel="stylesheet" href="/assets/css/admin.css">
 </head>
 <body>
@@ -49,33 +51,41 @@
 <!-- ======= APP ======= -->
 <div class="hidden" id="app-view">
   <div class="topbar">
-    <img src="/assets/img/logo-dark.png" alt="The Wildcut">
-    <div>
+    <img class="logo-light" src="/assets/img/logo-dark.png" alt="The Wildcut">
+    <img class="logo-dark" src="/assets/img/logo-white.png" alt="The Wildcut">
+    <div class="topbar-actions">
       <span class="who" id="who-line"></span>
+      <button class="btn ghost small" id="theme-toggle" type="button">🌙</button>
       <button class="btn ghost small" id="logout-btn" type="button">Logout</button>
     </div>
   </div>
 
-  <nav class="tabs" id="tabs">
-    <button data-tab="dashboard" class="active" type="button">Dashboard</button>
+  <nav class="tabs" id="tabs" aria-label="অ্যাডমিন নেভিগেশন">
+    <button data-tab="dashboard" class="active" type="button">ড্যাশবোর্ড</button>
     <button data-tab="news" type="button">সব খবর</button>
     <button data-tab="editor" type="button">নতুন খবর</button>
-    <button data-tab="categories" type="button" id="tab-categories">ক্যাটাগরি</button>
-    <button data-tab="users" type="button" id="tab-users">ব্যবহারকারী</button>
   </nav>
 
   <!-- Dashboard -->
   <section class="panel" id="tab-dashboard">
     <div class="stat-grid">
-      <div class="stat"><b id="st-published">–</b><span>প্রকাশিত খবর</span></div>
-      <div class="stat"><b id="st-drafts">–</b><span>Draft</span></div>
-      <div class="stat"><b id="st-total">–</b><span>মোট খবর</span></div>
-      <div class="stat"><b id="st-cats">–</b><span>ক্যাটাগরি</span></div>
-      <div class="stat"><b id="st-users">–</b><span>সক্রিয় ব্যবহারকারী</span></div>
+      <div class="stat kpi-card"><span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg></span><div class="kpi-copy"><b id="st-published">–</b><span>প্রকাশিত খবর</span></div></div>
+      <div class="stat kpi-card"><span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14.5 5.5 4 4L8 20H4v-4L14.5 5.5Z"/><path d="m12.5 7.5 4 4"/></svg></span><div class="kpi-copy"><b id="st-drafts">–</b><span>Draft</span></div></div>
+      <div class="stat kpi-card"><span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m12 3 9 5-9 5-9-5 9-5Z"/><path d="m3 13 9 5 9-5"/></svg></span><div class="kpi-copy"><b id="st-total">–</b><span>মোট খবর</span></div></div>
+      <div class="stat kpi-card"><span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 13.5 13.5 20a2 2 0 0 1-2.8 0L3 12.3V3h9.3l7.7 7.7a2 2 0 0 1 0 2.8Z"/><circle cx="7.5" cy="7.5" r="1.2"/></svg></span><div class="kpi-copy"><b id="st-cats">–</b><span>ক্যাটাগরি</span></div></div>
+      <div class="stat kpi-card"><span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 5a3.5 3.5 0 0 1 0 6.7M17.5 14.2a6.5 6.5 0 0 1 4 5.8"/></svg></span><div class="kpi-copy"><b id="st-users">–</b><span>সক্রিয় ব্যবহারকারী</span></div></div>
     </div>
     <div class="card" style="margin-top:1rem">
-      <h3 style="margin-top:0">সর্বশেষ সম্পাদিত খবর</h3>
-      <div id="latest-list"></div>
+      <h3 class="card-title">সর্বশেষ সম্পাদিত খবর</h3>
+      <div class="recent-list" id="latest-list"></div>
+    </div>
+    <div class="card" style="margin-top:1rem">
+      <h3 class="card-title">Analytics <span class="muted">(শুধু অ্যাডমিনের জন্য)</span></h3>
+      <div class="analytics-summary">
+        <div class="stat kpi-card"><span class="kpi-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7-9.5-7-9.5-7Z"/><circle cx="12" cy="12" r="3"/></svg></span><div class="kpi-copy"><b id="st-views">–</b><span>মোট ভিউ</span></div></div>
+      </div>
+      <h4 class="subsection-title">সর্বাধিক পঠিত খবর</h4>
+      <div class="analytics-list" id="top-posts"></div>
     </div>
   </section>
 
@@ -87,14 +97,17 @@
         <option value="">সব অবস্থা</option>
         <option value="published">Published</option>
         <option value="draft">Draft</option>
+        <option value="scheduled">Scheduled</option>
       </select>
       <button class="btn" id="news-new-btn" type="button">+ নতুন খবর</button>
     </div>
-    <div class="card" style="padding:0.4rem 0.8rem">
-      <table>
-        <thead><tr><th>শিরোনাম</th><th>ক্যাটাগরি</th><th>অবস্থা</th><th>হালনাগাদ</th><th></th></tr></thead>
+    <div class="card table-card">
+      <div class="table-scroll" role="region" aria-label="খবরের তালিকা" tabindex="0">
+      <table class="news-table">
+        <thead><tr><th>শিরোনাম</th><th>ক্যাটাগরি</th><th>অবস্থা</th><th>হালনাগাদ</th><th>অ্যাকশন</th></tr></thead>
         <tbody id="news-tbody"></tbody>
       </table>
+      </div>
     </div>
     <button class="btn ghost" id="news-more" type="button" style="display:none">আরও দেখুন</button>
   </section>
@@ -102,9 +115,11 @@
   <!-- Editor -->
   <section class="panel hidden" id="tab-editor">
     <form class="card" id="editor-form">
-      <h3 style="margin-top:0" id="editor-heading">নতুন খবর</h3>
+      <h3 class="card-title" id="editor-heading">নতুন খবর</h3>
       <input type="hidden" id="f-id">
-      <label>শিরোনাম *</label>
+      <div class="editor-section">
+        <h4>মূল তথ্য</h4>
+      <label>শিরোনাম <span class="required" aria-hidden="true">*</span></label>
       <input type="text" id="f-title" required maxlength="200">
       <div class="two-col">
         <div>
@@ -116,11 +131,17 @@
           <select id="f-category"></select>
         </div>
       </div>
+      </div>
+      <div class="editor-section">
+        <h4>বিবরণ</h4>
       <label>সংক্ষিপ্ত বিবরণ (excerpt)</label>
       <textarea id="f-excerpt" rows="2" maxlength="400"></textarea>
-      <label>সম্পূর্ণ খবরের লেখা *</label>
+      <label>সম্পূর্ণ খবরের লেখা <span class="required" aria-hidden="true">*</span></label>
       <textarea id="f-content" placeholder="প্রতিটি অনুচ্ছেদের মাঝে এক লাইন ফাঁক রাখুন…"></textarea>
 
+      </div>
+      <div class="editor-section">
+        <h4>ছবি</h4>
       <label>কভার ছবি</label>
       <input type="file" id="f-cover-file" accept="image/jpeg,image/png,image/webp,image/gif">
       <input type="text" id="f-cover-url" placeholder="ছবির URL (আপলোড করলে নিজে নিজে বসবে)" style="margin-top:0.5rem">
@@ -130,15 +151,26 @@
       <input type="file" id="f-extra-file" accept="image/jpeg,image/png,image/webp,image/gif">
       <div class="extra-list" id="extra-list"></div>
 
+      </div>
+      <div class="editor-section">
+        <h4>প্রকাশনা</h4>
       <div class="two-col">
         <div>
           <label>লেখক / প্রতিবেদক</label>
           <input type="text" id="f-author" maxlength="100">
         </div>
         <div>
-          <label>প্রকাশের তারিখ ও সময় (Publish এর সময়)</label>
-          <input type="datetime-local" id="f-published-at">
+          <label>অবস্থা (Status)</label>
+          <select id="f-status">
+            <option value="draft">Draft</option>
+            <option value="published">Published</option>
+            <option value="scheduled">Scheduled</option>
+          </select>
         </div>
+      </div>
+      <div id="published-at-wrap" style="display:none">
+        <label id="published-at-label">প্রকাশের তারিখ ও সময়</label>
+        <input type="datetime-local" id="f-published-at">
       </div>
       <div class="two-col">
         <div>
@@ -164,10 +196,10 @@
         <input type="checkbox" id="f-featured">
         <span>Featured News (হোমপেজের বড় খবর হিসেবে দেখাবে)</span>
       </p>
+      </div>
       <p class="muted" id="editor-status-line"></p>
-      <div style="display:flex; gap:0.6rem; flex-wrap:wrap; margin-top:0.6rem">
-        <button class="btn" type="button" id="btn-publish">Publish করুন</button>
-        <button class="btn ghost" type="button" id="btn-draft">Draft হিসেবে রাখুন</button>
+      <div class="editor-actions">
+        <button class="btn" type="button" id="btn-save">সংরক্ষণ করুন</button>
         <button class="btn ghost hidden" type="button" id="btn-unpublish">Unpublish</button>
         <button class="btn ghost" type="button" id="btn-cancel-edit">বাতিল</button>
       </div>
@@ -175,56 +207,6 @@
     </form>
   </section>
 
-  <!-- Categories -->
-  <section class="panel hidden" id="tab-categories">
-    <form class="card" id="category-form">
-      <h3 style="margin-top:0">নতুন ক্যাটাগরি</h3>
-      <div class="two-col">
-        <div><label>নাম *</label><input type="text" id="c-name" required maxlength="100"></div>
-        <div><label>Slug</label><input type="text" id="c-slug" maxlength="120" placeholder="নাম থেকে নিজে তৈরি হবে"></div>
-      </div>
-      <label>বিবরণ</label>
-      <input type="text" id="c-desc" maxlength="300">
-      <div style="margin-top:1rem"><button class="btn" type="submit">যোগ করুন</button></div>
-      <div class="msg hidden" id="category-msg"></div>
-    </form>
-    <div class="card" style="padding:0.4rem 0.8rem">
-      <table>
-        <thead><tr><th>নাম</th><th>Slug</th><th>খবর</th><th></th></tr></thead>
-        <tbody id="categories-tbody"></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- Users (owner only) -->
-  <section class="panel hidden" id="tab-users">
-    <form class="card" id="user-form">
-      <h3 style="margin-top:0">নতুন ব্যবহারকারীকে অ্যাক্সেস দিন</h3>
-      <div class="two-col">
-        <div><label>নাম *</label><input type="text" id="u-name" required maxlength="100"></div>
-        <div><label>ইমেইল *</label><input type="email" id="u-email" required></div>
-      </div>
-      <div class="two-col">
-        <div><label>পাসওয়ার্ড (কমপক্ষে ৮ অক্ষর) *</label><input type="password" id="u-password" required minlength="8"></div>
-        <div>
-          <label>Role</label>
-          <select id="u-role">
-            <option value="editor">Editor — শুধু খবর</option>
-            <option value="admin">Admin — খবর + ক্যাটাগরি</option>
-            <option value="owner">Owner — সবকিছু</option>
-          </select>
-        </div>
-      </div>
-      <div style="margin-top:1rem"><button class="btn" type="submit">অ্যাকাউন্ট তৈরি করুন</button></div>
-      <div class="msg hidden" id="user-msg"></div>
-    </form>
-    <div class="card" style="padding:0.4rem 0.8rem">
-      <table>
-        <thead><tr><th>নাম</th><th>ইমেইল</th><th>Role</th><th>অবস্থা</th><th></th></tr></thead>
-        <tbody id="users-tbody"></tbody>
-      </table>
-    </div>
-  </section>
 </div>
 
 <div id="toast" class="hidden"></div>

@@ -1,18 +1,31 @@
 import { html } from '../lib/http.js';
 import { renderArticle, renderNotFound } from '../lib/render.js';
+import { publishDue } from '../lib/publishDue.js';
 
 // GET /news/<slug> — server-rendered article page (Facebook/SEO friendly).
 export async function onRequestGet({ request, env, params }) {
   const origin = new URL(request.url).origin;
   try {
+    await publishDue(env.DB);
     const news = await env.DB.prepare(
-      `SELECT n.*, c.name AS category_name, c.slug AS category_slug
-         FROM news n LEFT JOIN categories c ON c.id = n.category_id
+      `SELECT n.*, c.name AS category_name, c.slug AS category_slug,
+              COALESCE(NULLIF(n.author, ''), u.name) AS author_name,
+              CASE WHEN n.author <> '' THEN '' ELSE COALESCE(u.avatar_url, '') END AS author_avatar
+         FROM news n
+         LEFT JOIN categories c ON c.id = n.category_id
+         LEFT JOIN admin_users u ON u.id = n.created_by
         WHERE n.slug = ? AND n.status = 'published'`
     )
       .bind(params.slug)
       .first();
     if (!news) return html(renderNotFound(origin), 404, 'no-store');
+
+    // Count the view (admin analytics only — never shown on the public site).
+    // Fire-and-forget: a failed count must never break the article page.
+    env.DB.prepare('UPDATE news SET views = views + 1 WHERE id = ?')
+      .bind(news.id)
+      .run()
+      .catch(() => {});
 
     const category = news.category_id
       ? { name: news.category_name, slug: news.category_slug }

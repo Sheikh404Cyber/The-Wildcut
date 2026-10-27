@@ -1,11 +1,17 @@
 import { json, fail } from '../../../lib/http.js';
+import { publishDue } from '../../../lib/publishDue.js';
 
 // Public single article (JSON) — published only. The human-facing page is /news/<slug> (SSR).
 export async function onRequestGet({ params, env }) {
   try {
+    await publishDue(env.DB);
     const news = await env.DB.prepare(
-      `SELECT n.*, c.name AS category_name, c.slug AS category_slug
-         FROM news n LEFT JOIN categories c ON c.id = n.category_id
+      `SELECT n.*, c.name AS category_name, c.slug AS category_slug,
+              COALESCE(NULLIF(n.author, ''), u.name) AS author_name,
+              CASE WHEN n.author <> '' THEN '' ELSE COALESCE(u.avatar_url, '') END AS author_avatar
+         FROM news n
+         LEFT JOIN categories c ON c.id = n.category_id
+         LEFT JOIN admin_users u ON u.id = n.created_by
         WHERE n.slug = ? AND n.status = 'published'`
     )
       .bind(params.slug)

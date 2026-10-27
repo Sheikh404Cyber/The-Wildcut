@@ -78,7 +78,7 @@ export async function getSessionUser(request, env) {
   if (!token) return null;
   const tokenHash = await sha256Hex(token);
   const row = await env.DB.prepare(
-    `SELECT s.expires_at, u.id, u.name, u.email, u.role, u.is_active
+    `SELECT s.expires_at, u.id, u.name, u.email, u.role, u.avatar_url, u.is_active
        FROM sessions s JOIN admin_users u ON u.id = s.user_id
       WHERE s.token_hash = ?`
   )
@@ -90,7 +90,7 @@ export async function getSessionUser(request, env) {
     await env.DB.prepare('DELETE FROM sessions WHERE token_hash = ?').bind(tokenHash).run();
     return null;
   }
-  return { id: row.id, name: row.name, email: row.email, role: row.role };
+  return { id: row.id, name: row.name, email: row.email, role: row.role, avatar_url: row.avatar_url || '' };
 }
 
 export async function destroySession(request, env) {
