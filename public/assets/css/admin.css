@@ -304,23 +304,44 @@ tbody tr:hover { background: var(--surface-2); }
 }
 .catbar-row strong { text-align: right; white-space: nowrap; }
 
-/* ---------- Settings: profile + categories ---------- */
+/* ---------- Users: profile + user management ---------- */
 .profile-head { display: flex; gap: 1rem; align-items: center; }
 .profile-avatar {
   width: 76px; height: 76px; flex: 0 0 76px; border-radius: 50%;
   object-fit: cover; border: 2px solid var(--border); background: var(--surface-2);
 }
-.cat-row {
-  display: grid; grid-template-columns: 1.2fr 1.4fr 92px auto;
-  gap: 0.6rem; align-items: end; padding: 0.75rem 0; border-bottom: 1px solid var(--border);
+.user-row {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 0.85rem; align-items: center; padding: 0.7rem 0; border-bottom: 1px solid var(--border);
 }
-.cat-row:last-child { border-bottom: 0; }
-.cat-row input { min-width: 0; }
-.cat-slug { display: block; margin-top: 0.3rem; color: var(--muted); font-size: 0.82rem; overflow-wrap: anywhere; }
+.user-row:last-child { border-bottom: 0; }
+.user-avatar {
+  position: relative; width: 46px; height: 46px; border-radius: 50%; overflow: hidden;
+  background: var(--accent-soft); border: 1px solid var(--border);
+}
+.user-initial {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  font-weight: 800; font-size: 1.05rem; color: var(--accent);
+}
+.user-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.user-meta { min-width: 0; }
+.user-meta strong { display: block; overflow-wrap: anywhere; }
+.user-email { display: block; color: var(--muted); font-size: 0.88rem; overflow-wrap: anywhere; }
+.user-badges { display: flex; gap: 0.35rem; flex-wrap: wrap; margin-top: 0.3rem; }
+.badge.role-owner { background: var(--accent); color: var(--accent-text); text-transform: none; }
+.badge.role-admin { background: var(--info-bg); color: var(--info-text); text-transform: none; }
+.badge.role-editor { background: var(--surface-2); color: var(--muted); text-transform: none; }
+.badge.on { background: var(--accent-soft); color: var(--accent); text-transform: none; }
+.badge.off { background: var(--danger-soft); color: var(--danger); text-transform: none; }
+.badge.self { background: var(--warning-bg); color: var(--warning-text); text-transform: none; }
+.user-actions { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.user-actions select { width: auto; min-width: 118px; }
 @media (max-width: 720px) {
-  .cat-row { grid-template-columns: 1fr; align-items: stretch; }
   .catbar-row { grid-template-columns: minmax(84px, 120px) 1fr 44px; gap: 0.55rem; }
   .author-info { flex-wrap: wrap; }
+  .user-row { grid-template-columns: auto minmax(0, 1fr); }
+  .user-actions { grid-column: 2; justify-content: flex-start; }
+  .user-actions select { flex: 1 1 auto; }
 }
 
 /* ---------- Toast ---------- */

@@ -65,7 +65,7 @@
     <button data-tab="news" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 5.5A1.5 1.5 0 0 1 5.5 4H17v15.5H5.5A1.5 1.5 0 0 1 4 18Z"/><path d="M17 8.5h1.5A1.5 1.5 0 0 1 20 10v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2"/><path d="M7.5 8.5h6M7.5 12h6M7.5 15.5h4"/></svg>সব খবর</button>
     <button data-tab="editor" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m14.5 5.5 4 4L8 20H4v-4L14.5 5.5Z"/><path d="m12.5 7.5 4 4"/></svg>নতুন খবর</button>
     <button data-tab="analytics" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 20v-6M11 20V6M17 20v-9"/><path d="M3 20h18"/></svg>অ্যানালিটিক্স</button>
-    <button data-tab="settings" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v3M12 18.2v3M2.8 12h3M18.2 12h3M5.5 5.5l2.1 2.1M16.4 16.4l2.1 2.1M18.5 5.5l-2.1 2.1M7.6 16.4l-2.1 2.1"/></svg>সেটিংস</button>
+    <button data-tab="users" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20a6.5 6.5 0 0 1 13 0"/><path d="M16 5a3.5 3.5 0 0 1 0 6.7M17.5 14.2a6.5 6.5 0 0 1 4 5.8"/></svg>ব্যবহারকারী</button>
   </nav>
 
   <!-- Dashboard -->
@@ -88,6 +88,15 @@
       </div>
       <h4 class="subsection-title">সর্বাধিক পঠিত খবর</h4>
       <div class="analytics-list" id="top-posts"></div>
+    </div>
+    <div class="card" style="margin-top:1rem" id="law-card">
+      <h3 class="card-title">আইন ও নীতিমালা — বিভাগের লেখা</h3>
+      <label>বিভাগের লেখা (আইন ও নীতিমালা পেজে এই লেখাটি দেখায়)</label>
+      <textarea id="law-desc" rows="3" maxlength="300"></textarea>
+      <div class="editor-actions">
+        <button class="btn" type="button" id="law-save">সংরক্ষণ করুন</button>
+      </div>
+      <div class="msg hidden" id="law-msg"></div>
     </div>
   </section>
 
@@ -257,8 +266,8 @@
     </div>
   </section>
 
-  <!-- Settings -->
-  <section class="panel hidden" id="tab-settings">
+  <!-- Users -->
+  <section class="panel hidden" id="tab-users">
     <div class="card" id="profile-card">
       <h3 class="card-title">আমার প্রোফাইল</h3>
       <div class="profile-head">
@@ -275,68 +284,59 @@
         <button class="btn" type="button" id="prof-save">প্রোফাইল সংরক্ষণ করুন</button>
       </div>
       <div class="msg hidden" id="prof-msg"></div>
-    </div>
 
-    <div class="card">
-      <h3 class="card-title">যোগাযোগ</h3>
+      <h4 class="subsection-title">পাসওয়ার্ড বদলান</h4>
       <div class="two-col">
         <div>
-          <label>যোগাযোগের ইমেইল</label>
-          <input type="email" id="set-contact-email" maxlength="120">
+          <label>বর্তমান পাসওয়ার্ড</label>
+          <input type="password" id="pw-current" autocomplete="current-password">
         </div>
         <div>
-          <label>যোগাযোগের ফোন</label>
-          <input type="text" id="set-contact-phone" maxlength="30">
+          <label>নতুন পাসওয়ার্ড (কমপক্ষে ৮ অক্ষর)</label>
+          <input type="password" id="pw-new" minlength="8" autocomplete="new-password">
         </div>
       </div>
       <div class="editor-actions">
-        <button class="btn" type="button" id="contact-save">সংরক্ষণ করুন</button>
+        <button class="btn ghost" type="button" id="pw-save">পাসওয়ার্ড বদলান</button>
       </div>
-      <div class="msg hidden" id="contact-msg"></div>
+      <div class="msg hidden" id="pw-msg"></div>
     </div>
 
-    <div class="card">
-      <h3 class="card-title">সাইটের লেখা</h3>
-      <label>Footer-এর লেখা</label>
-      <textarea id="set-footer-text" rows="2" maxlength="5000"></textarea>
-      <label>আমাদের সম্পর্কে (About) পেজের লেখা</label>
-      <textarea id="set-about-text" rows="5" maxlength="5000"></textarea>
-      <label>যোগাযোগ পেজের লেখা</label>
-      <textarea id="set-contact-text" rows="3" maxlength="5000"></textarea>
-      <div class="editor-actions">
-        <button class="btn" type="button" id="texts-save">লেখা সংরক্ষণ করুন</button>
-      </div>
-      <div class="msg hidden" id="texts-msg"></div>
-    </div>
-
-    <div class="card">
-      <h3 class="card-title">ক্যাটাগরি</h3>
-      <div id="cat-list"></div>
-      <h4 class="subsection-title">নতুন ক্যাটাগরি যোগ করুন</h4>
-      <div class="two-col">
-        <div>
-          <label>নাম</label>
-          <input type="text" id="cat-new-name" maxlength="100">
+    <div class="card" id="users-card">
+      <h3 class="card-title">ব্যবহারকারীগণ</h3>
+      <div id="users-list"></div>
+      <p class="muted hidden" id="users-note">শুধু মালিক নতুন ব্যবহারকারী যোগ করতে পারেন।</p>
+      <div id="user-create-wrap" class="hidden">
+        <h4 class="subsection-title">নতুন ব্যবহারকারী</h4>
+        <div class="two-col">
+          <div>
+            <label>নাম</label>
+            <input type="text" id="nu-name" maxlength="100">
+          </div>
+          <div>
+            <label>ইমেইল</label>
+            <input type="email" id="nu-email" maxlength="150" autocomplete="off">
+          </div>
         </div>
-        <div>
-          <label>Slug (URL-এ যা দেখাবে)</label>
-          <input type="text" id="cat-new-slug" maxlength="120">
+        <div class="two-col">
+          <div>
+            <label>পাসওয়ার্ড (কমপক্ষে ৮ অক্ষর)</label>
+            <input type="password" id="nu-password" minlength="8" autocomplete="new-password">
+          </div>
+          <div>
+            <label>ভূমিকা (Role)</label>
+            <select id="nu-role">
+              <option value="editor" selected>এডিটর</option>
+              <option value="admin">অ্যাডমিন</option>
+              <option value="owner">মালিক</option>
+            </select>
+          </div>
         </div>
-      </div>
-      <div class="two-col">
-        <div>
-          <label>বিবরণ</label>
-          <input type="text" id="cat-new-desc" maxlength="300">
+        <div class="editor-actions">
+          <button class="btn" type="button" id="nu-add">ব্যবহারকারী তৈরি করুন</button>
         </div>
-        <div>
-          <label>ক্রম (sort order)</label>
-          <input type="number" id="cat-new-sort" value="0">
-        </div>
+        <div class="msg hidden" id="nu-msg"></div>
       </div>
-      <div class="editor-actions">
-        <button class="btn" type="button" id="cat-add">ক্যাটাগরি যোগ করুন</button>
-      </div>
-      <div class="msg hidden" id="cat-msg"></div>
     </div>
   </section>
 

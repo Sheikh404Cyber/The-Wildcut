@@ -113,13 +113,13 @@ document.querySelectorAll('#tabs button').forEach((btn) => {
 
 function switchTab(name) {
   document.querySelectorAll('#tabs button').forEach((b) => b.classList.toggle('active', b.dataset.tab === name));
-  ['dashboard', 'news', 'editor', 'analytics', 'settings'].forEach((t) => {
+  ['dashboard', 'news', 'editor', 'analytics', 'users'].forEach((t) => {
     $('tab-' + t).classList.toggle('hidden', t !== name);
   });
   if (name === 'dashboard') loadDashboard();
   if (name === 'news') { state.newsPage = 1; loadNewsList(true); }
   if (name === 'analytics') loadAnalytics();
-  if (name === 'settings') loadSettingsTab();
+  if (name === 'users') loadUsersTab();
 }
 
 /* ---------------- Dashboard ---------------- */
@@ -143,6 +143,7 @@ async function loadDashboard() {
       ? data.top_posts.map((p, i) => `<div class="analytics-row"><span class="analytics-rank">${i + 1}</span><a href="/news/${encodeURIComponent(p.slug)}" target="_blank" rel="noopener">${esc(p.title)}</a><strong>${p.views} ভিউ</strong></div>`).join('')
       : '<p class="muted">এখনো কোনো ভিউ নেই।</p>';
   } catch (err) { toast(err.message); }
+  loadLawText();
 }
 
 /* ---------------- News list ---------------- */
@@ -291,7 +292,7 @@ function paintAuthorInfo() {
 }
 
 $('btn-change-photo').addEventListener('click', () => {
-  switchTab('settings');
+  switchTab('users');
   const card = $('profile-card');
   if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
 });
@@ -491,7 +492,7 @@ async function loadAnalytics() {
   } catch (err) { toast(err.message); }
 }
 
-/* ---------------- Settings tab: profile ---------------- */
+/* ---------------- Users tab: my profile ---------------- */
 // null = unchanged; '' = clear; anything else = the value to save.
 const profileState = { avatar: null };
 
@@ -570,115 +571,167 @@ $('prof-save').addEventListener('click', async () => {
   } catch (err) { showMsg(msg, err.message, false); }
 });
 
-/* ---------------- Settings tab: site settings + categories ---------------- */
-function loadSettingsTab() {
+/* ---------------- Users tab: change my password ---------------- */
+$('pw-save').addEventListener('click', async () => {
+  const msg = $('pw-msg');
+  const current = $('pw-current').value;
+  const next = $('pw-new').value;
+  if (!current) { showMsg(msg, 'বর্তমান পাসওয়ার্ড দিতে হবে', false); return; }
+  if (next.length < 8) { showMsg(msg, 'নতুন পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে', false); return; }
+  try {
+    // Password-only body — the server keeps name/avatar unchanged.
+    await api('/api/admin/me', {
+      method: 'PUT',
+      body: JSON.stringify({ current_password: current, new_password: next }),
+    });
+    $('pw-current').value = '';
+    $('pw-new').value = '';
+    showMsg(msg, 'পাসওয়ার্ড বদলানো হয়েছে।', true);
+  } catch (err) { showMsg(msg, err.message, false); }
+});
+
+/* ---------------- Users tab: user management (owner only) ---------------- */
+const ROLE_LABELS = { owner: 'মালিক', admin: 'অ্যাডমিন', editor: 'এডিটর' };
+
+function loadUsersTab() {
   fillProfile();
-  loadCategoriesAdmin();
-  loadSiteSettings();
+  loadUsersList();
 }
 
-async function loadSiteSettings() {
+async function loadUsersList() {
+  const wrap = $('users-list');
+  const isOwner = state.user?.role === 'owner';
+  $('users-note').classList.toggle('hidden', isOwner);
+  $('user-create-wrap').classList.toggle('hidden', !isOwner);
+  if (!isOwner) { wrap.innerHTML = ''; return; }
   try {
-    const s = await api('/api/admin/settings');
-    $('set-contact-email').value = s.contact_email || '';
-    $('set-contact-phone').value = s.contact_phone || '';
-    $('set-footer-text').value = s.footer_text || '';
-    $('set-about-text').value = s.about_text || '';
-    $('set-contact-text').value = s.contact_text || '';
-  } catch {
-    const note = 'এই অংশটি শুধু owner/admin দেখতে ও বদলাতে পারেন।';
-    showMsg($('contact-msg'), note, false);
-    showMsg($('texts-msg'), note, false);
-  }
-}
-
-$('contact-save').addEventListener('click', async () => {
-  try {
-    await api('/api/admin/settings', {
-      method: 'PUT',
-      body: JSON.stringify({
-        contact_email: $('set-contact-email').value,
-        contact_phone: $('set-contact-phone').value,
-      }),
-    });
-    showMsg($('contact-msg'), 'সেভ হয়েছে', true);
-  } catch (err) { showMsg($('contact-msg'), err.message, false); }
-});
-
-$('texts-save').addEventListener('click', async () => {
-  try {
-    await api('/api/admin/settings', {
-      method: 'PUT',
-      body: JSON.stringify({
-        footer_text: $('set-footer-text').value,
-        about_text: $('set-about-text').value,
-        contact_text: $('set-contact-text').value,
-      }),
-    });
-    showMsg($('texts-msg'), 'সেভ হয়েছে — সাইটে এখন থেকে এই লেখাই দেখাবে।', true);
-  } catch (err) { showMsg($('texts-msg'), err.message, false); }
-});
-
-async function loadCategoriesAdmin() {
-  const wrap = $('cat-list');
-  try {
-    const data = await api('/api/admin/categories');
-    if (!data.categories.length) {
-      wrap.innerHTML = '<p class="muted">কোনো ক্যাটাগরি নেই।</p>';
+    const data = await api('/api/admin/users');
+    if (!data.users.length) {
+      wrap.innerHTML = '<p class="muted">কোনো ব্যবহারকারী নেই।</p>';
       return;
     }
-    wrap.innerHTML = data.categories.map((c) => `
-      <div class="cat-row">
-        <div>
-          <input type="text" value="${esc(c.name)}" data-f="name" maxlength="100" aria-label="ক্যাটাগরির নাম">
-          <span class="cat-slug">/${esc(c.slug)} · ${c.news_count}টি খবর</span>
-        </div>
-        <input type="text" value="${esc(c.description || '')}" data-f="description" maxlength="300" placeholder="বিবরণ" aria-label="বিবরণ">
-        <input type="number" value="${c.sort_order ?? 0}" data-f="sort_order" aria-label="ক্রম">
-        <button class="btn ghost small" type="button" data-save="${c.id}">সেভ</button>
-      </div>`).join('');
-    wrap.querySelectorAll('[data-save]').forEach((btn) =>
-      btn.addEventListener('click', async () => {
-        const row = btn.closest('.cat-row');
-        const body = {
-          name: row.querySelector('[data-f="name"]').value,
-          description: row.querySelector('[data-f="description"]').value,
-          sort_order: parseInt(row.querySelector('[data-f="sort_order"]').value, 10) || 0,
-        };
-        try {
-          await api(`/api/admin/categories/${btn.dataset.save}`, { method: 'PUT', body: JSON.stringify(body) });
-          toast('ক্যাটাগরি সেভ হয়েছে');
-          loadCategoriesAdmin();
-          loadCategoryOptions();
-        } catch (err) { toast(err.message); }
-      })
-    );
-  } catch (err) {
-    wrap.innerHTML = `<p class="muted">${esc(err.message)}</p>`;
+    wrap.innerHTML = data.users.map((u) => userRowHtml(u)).join('');
+    bindUserRows();
+  } catch {
+    // The list endpoint is owner-only — never surface a raw error here.
+    wrap.innerHTML = '';
+    $('users-note').classList.remove('hidden');
+    $('user-create-wrap').classList.add('hidden');
   }
 }
 
-$('cat-new-name').addEventListener('input', () => {
-  $('cat-new-slug').value = jsSlug($('cat-new-name').value);
+function userRowHtml(u) {
+  const self = state.user && u.id === state.user.id;
+  const initial = esc((u.name || '?').trim().charAt(0) || '?');
+  return `
+  <div class="user-row">
+    <span class="user-avatar"><span class="user-initial">${initial}</span><img src="/api/public/avatar/${u.id}" alt="" loading="lazy" onerror="this.remove()"></span>
+    <div class="user-meta">
+      <strong>${esc(u.name)}</strong>
+      <span class="user-email">${esc(u.email)}</span>
+      <span class="user-badges">
+        <span class="badge role-${esc(u.role)}">${ROLE_LABELS[u.role] || esc(u.role)}</span>
+        ${u.is_active ? '<span class="badge on">সক্রিয়</span>' : '<span class="badge off">নিষ্ক্রিয়</span>'}
+        ${self ? '<span class="badge self">আপনি</span>' : ''}
+      </span>
+    </div>
+    <div class="user-actions">
+      <select data-role="${u.id}" aria-label="ভূমিকা" ${self ? 'disabled' : ''}>
+        <option value="editor" ${u.role === 'editor' ? 'selected' : ''}>এডিটর</option>
+        <option value="admin" ${u.role === 'admin' ? 'selected' : ''}>অ্যাডমিন</option>
+        <option value="owner" ${u.role === 'owner' ? 'selected' : ''}>মালিক</option>
+      </select>
+      ${self ? '' : `
+      <button class="btn ghost small" type="button" data-toggle="${u.id}" data-active="${u.is_active ? 1 : 0}">${u.is_active ? 'নিষ্ক্রিয় করুন' : 'সক্রিয় করুন'}</button>
+      <button class="btn danger small" type="button" data-del="${u.id}" data-name="${esc(u.name)}">মুছুন</button>`}
+    </div>
+  </div>`;
+}
+
+function bindUserRows() {
+  $('users-list').querySelectorAll('select[data-role]').forEach((sel) =>
+    sel.addEventListener('change', async () => {
+      try {
+        await api(`/api/admin/users/${sel.dataset.role}`, { method: 'PUT', body: JSON.stringify({ role: sel.value }) });
+        toast('ভূমিকা বদলানো হয়েছে');
+      } catch (err) { toast(err.message); }
+      loadUsersList();
+    })
+  );
+  $('users-list').querySelectorAll('[data-toggle]').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      const active = btn.dataset.active === '1';
+      try {
+        await api(`/api/admin/users/${btn.dataset.toggle}`, { method: 'PUT', body: JSON.stringify({ is_active: active ? 0 : 1 }) });
+        toast(active ? 'ব্যবহারকারী নিষ্ক্রিয় করা হয়েছে' : 'ব্যবহারকারী সক্রিয় করা হয়েছে');
+      } catch (err) { toast(err.message); }
+      loadUsersList();
+    })
+  );
+  $('users-list').querySelectorAll('[data-del]').forEach((btn) =>
+    btn.addEventListener('click', async () => {
+      if (!confirm(`সত্যিই মুছে ফেলতে চান?\n"${btn.dataset.name}" — এই ব্যবহারকারী আর লগইন করতে পারবেন না।`)) return;
+      try {
+        await api(`/api/admin/users/${btn.dataset.del}`, { method: 'DELETE' });
+        toast('ব্যবহারকারী মুছে ফেলা হয়েছে');
+        loadUsersList();
+      } catch (err) { toast(err.message); }
+    })
+  );
+}
+
+$('nu-add').addEventListener('click', async () => {
+  const msg = $('nu-msg');
+  const name = $('nu-name').value.trim();
+  const email = $('nu-email').value.trim();
+  const password = $('nu-password').value;
+  const role = $('nu-role').value;
+  if (!name) { showMsg(msg, 'নাম দিতে হবে', false); return; }
+  if (!email) { showMsg(msg, 'ইমেইল দিতে হবে', false); return; }
+  if (password.length < 8) { showMsg(msg, 'পাসওয়ার্ড কমপক্ষে ৮ অক্ষরের হতে হবে', false); return; }
+  try {
+    await api('/api/admin/users', { method: 'POST', body: JSON.stringify({ name, email, password, role }) });
+    $('nu-name').value = '';
+    $('nu-email').value = '';
+    $('nu-password').value = '';
+    $('nu-role').value = 'editor';
+    showMsg(msg, 'তৈরি হয়েছে — এখন এই ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করতে পারবে', true);
+    loadUsersList();
+  } catch (err) { showMsg(msg, err.message, false); }
 });
 
-$('cat-add').addEventListener('click', async () => {
-  const body = {
-    name: $('cat-new-name').value,
-    slug: $('cat-new-slug').value,
-    description: $('cat-new-desc').value,
-    sort_order: parseInt($('cat-new-sort').value, 10) || 0,
-  };
+/* ---------------- Dashboard: আইন ও নীতিমালা category text ----------------
+   The one text-editing card kept after the declutter (owner's exception). */
+let lawCategoryId = null;
+
+async function loadLawText() {
   try {
-    await api('/api/admin/categories', { method: 'POST', body: JSON.stringify(body) });
-    $('cat-new-name').value = '';
-    $('cat-new-slug').value = '';
-    $('cat-new-desc').value = '';
-    $('cat-new-sort').value = '0';
-    showMsg($('cat-msg'), 'নতুন ক্যাটাগরি যোগ হয়েছে', true);
-    loadCategoriesAdmin();
-    loadCategoryOptions();
-  } catch (err) { showMsg($('cat-msg'), err.message, false); }
+    const data = await api('/api/admin/categories');
+    const law = (data.categories || []).find((c) => c.slug === 'law-policy');
+    if (!law) { $('law-card').classList.add('hidden'); return; }
+    lawCategoryId = law.id;
+    $('law-desc').value = law.description || '';
+  } catch {
+    $('law-card').classList.add('hidden');
+  }
+}
+
+$('law-save').addEventListener('click', async () => {
+  if (!lawCategoryId) return;
+  try {
+    await api(`/api/admin/categories/${lawCategoryId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ description: $('law-desc').value }),
+    });
+    showMsg($('law-msg'), 'সেভ হয়েছে — আইন ও নীতিমালা পেজে এখন এই লেখাই দেখাবে।', true);
+  } catch (err) {
+    // Editing categories is owner/admin-only; editors get a quiet note.
+    if (err.message === 'Permission denied') {
+      showMsg($('law-msg'), 'এই লেখা বদলানোর অনুমতি শুধু মালিক/অ্যাডমিনের আছে।', false);
+    } else {
+      showMsg($('law-msg'), err.message, false);
+    }
+  }
 });
 
 /* ---------------- Theme toggle (same key as the public site) ---------------- */
