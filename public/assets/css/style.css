@@ -385,11 +385,14 @@ button { font: inherit; }
      over the photo (owner's explicit choice). Height is moderate — tall
      enough for chip + 3-line headline + excerpt + byline + date without
      clipping, never the full screen. */
-  .hero { min-height: 0; height: min(124vw, 470px); max-height: none; aspect-ratio: auto; }
+  .hero { min-height: 330px; height: min(94vw, 400px); max-height: none; aspect-ratio: auto; }
   .hero-slide img.hero-bg { object-position: center 30%; animation: none; }
-  .hero-content { padding: 5.2rem 1rem 2.2rem; }
+  .hero-slide::after {
+    background: linear-gradient(180deg, rgba(7, 20, 4, 0.16) 0%, rgba(7, 20, 4, 0.5) 46%, rgba(4, 13, 2, 0.95) 100%);
+  }
+  .hero-content { position: absolute; left: 0; right: 0; bottom: 0; padding: 1rem 1rem 2.1rem; }
   .hero-content h1 {
-    font-size: clamp(1.45rem, 5.8vw, 1.85rem); line-height: 1.38;
+    font-size: clamp(1.35rem, 5.2vw, 1.65rem); line-height: 1.38;
     display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;
   }
   .hero-content p { font-size: 0.94rem; line-height: 1.55; }
