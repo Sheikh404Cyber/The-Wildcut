@@ -7,6 +7,10 @@ export async function onRequestGet({ request, env, params }) {
   const origin = new URL(request.url).origin;
   try {
     await publishDue(env.DB);
+    // Pages may hand the slug over percent-encoded; match either form.
+    const rawSlug = String(params.slug || '');
+    let decodedSlug = rawSlug;
+    try { decodedSlug = decodeURIComponent(rawSlug); } catch { /* keep raw */ }
     const news = await env.DB.prepare(
       `SELECT n.*, c.name AS category_name, c.slug AS category_slug,
               COALESCE(NULLIF(n.author, ''), u.name) AS author_name,
@@ -14,9 +18,9 @@ export async function onRequestGet({ request, env, params }) {
          FROM news n
          LEFT JOIN categories c ON c.id = n.category_id
          LEFT JOIN admin_users u ON u.id = n.created_by
-        WHERE n.slug = ? AND n.status = 'published'`
+        WHERE (n.slug = ? OR n.slug = ?) AND n.status = 'published'`
     )
-      .bind(params.slug)
+      .bind(rawSlug, decodedSlug)
       .first();
     if (!news) return html(renderNotFound(origin), 404, 'no-store');
 
