@@ -1,19 +1,30 @@
-// Serves uploaded images from the R2 bucket at /media/<key>.
-// This avoids needing a custom domain or public r2.dev URL.
-export async function onRequestGet({ env, params }) {
+// Serves uploaded images at /media/<key>.
+// Primary source: the R2 bucket (MEDIA binding). While R2 is not enabled
+// (it needs a payment card on the account), existing images are bundled as
+// static files under public/media/ and served through the ASSETS fallback.
+export async function onRequestGet(context) {
+  const { env, params, request } = context;
   try {
-    if (!env.MEDIA) return new Response('Storage not configured', { status: 503 });
     const key = Array.isArray(params.key) ? params.key.join('/') : String(params.key || '');
     if (!key || key.includes('..')) return new Response('Not found', { status: 404 });
 
-    const object = await env.MEDIA.get(key);
-    if (!object) return new Response('Not found', { status: 404 });
+    if (env.MEDIA) {
+      const object = await env.MEDIA.get(key);
+      if (object) {
+        const headers = new Headers();
+        object.writeHttpMetadata(headers);
+        headers.set('ETag', object.httpEtag);
+        headers.set('Cache-Control', 'public, max-age=31536000, immutable');
+        return new Response(object.body, { headers });
+      }
+    }
 
-    const headers = new Headers();
-    object.writeHttpMetadata(headers);
-    headers.set('ETag', object.httpEtag);
-    headers.set('Cache-Control', 'public, max-age=31536000, immutable');
-    return new Response(object.body, { headers });
+    // Static fallback: image bundled in public/media/<key>.
+    if (env.ASSETS) {
+      const res = await env.ASSETS.fetch(request);
+      if (res.status === 200) return res;
+    }
+    return new Response('Not found', { status: 404 });
   } catch {
     return new Response('Server error', { status: 500 });
   }
