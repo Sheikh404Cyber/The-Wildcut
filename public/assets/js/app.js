@@ -173,7 +173,7 @@ function heroSlideHtml(n, active) {
   return `<a class="hero-slide${active ? ' is-active' : ''}" href="/news/${encodeURIComponent(n.slug)}"${active ? '' : ' aria-hidden="true" tabindex="-1"'}>
     ${
       n.cover_image_url
-        ? `<img class="hero-bg" src="${esc(n.cover_image_url)}" alt="" ${active ? 'fetchpriority="high"' : 'loading="lazy"'} decoding="async" ${IMG_FALLBACK}>`
+        ? `<img class="hero-bg" src="${esc(n.cover_image_url)}" alt="" ${active ? 'fetchpriority="high"' : ''} decoding="async" ${IMG_FALLBACK}>`
         : ''
     }
     <div class="hero-content">

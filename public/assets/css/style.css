@@ -113,39 +113,37 @@ button { font: inherit; }
 .search-submit:hover { background: var(--green-dark); }
 .search-submit .icon { width: 16px; height: 16px; }
 #search-toggle .icon { width: 20px; height: 20px; }
-@media (min-width: 900px) {
-  .search-box { display: flex; flex: 0 1 320px; width: clamp(280px, 24vw, 340px); }
-  #search-toggle { display: none; }
-}
-@media (max-width: 899px) {
-  .site-header.search-open .search-box {
-    display: flex; position: absolute; top: 100%; left: 0; right: 0; z-index: 60;
-    border-radius: 0; border-left: 0; border-right: 0; border-top: 0;
-    padding: 0.55rem 0.9rem; background: var(--header-bg);
-    box-shadow: 0 16px 24px rgba(0, 0, 0, 0.14);
-  }
+/* Click-to-open: the search icon stays in the header at every width;
+   clicking it opens one long pill bar under the header (client's choice). */
+.site-header.search-open .search-box {
+  display: flex; position: absolute; top: calc(100% + 0.5rem); left: 50%;
+  transform: translateX(-50%); width: min(680px, calc(100% - 1.6rem)); z-index: 60;
+  padding: 0.3rem; background: var(--surface);
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.22);
 }
 
 /* Dark-mode switch — pill track with a sliding sun/moon knob */
 .theme-switch {
-  position: relative; flex: 0 0 auto; width: 54px; height: 30px; padding: 0;
+  position: relative; flex: 0 0 auto; width: 58px; height: 32px; padding: 0;
   border-radius: 999px; border: 1px solid var(--border); background: var(--chip-bg);
   cursor: pointer; transition: background 0.3s ease, border-color 0.3s ease;
 }
 .theme-switch:hover { border-color: var(--leaf); }
 .theme-knob {
-  position: absolute; top: 4px; left: 4px; width: 22px; height: 22px; border-radius: 50%;
+  position: absolute; top: 3px; left: 3px; width: 24px; height: 24px; border-radius: 50%;
   background: #ffffff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.28);
   display: flex; align-items: center; justify-content: center;
   transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s ease;
 }
 .theme-knob .icon { width: 15px; height: 15px; }
-.theme-knob .icon-sun { color: #d98a06; }
-.theme-knob .icon-moon { display: none; color: var(--leaf); }
+/* Clean line icons in brand greens (no emoji-orange): moon invites dark
+   mode in light theme; sun invites light mode in dark theme. */
+.theme-knob .icon-sun { display: none; color: var(--leaf); }
+.theme-knob .icon-moon { color: var(--green); }
 [data-theme="dark"] .theme-switch { background: #1d1d1d; }
-[data-theme="dark"] .theme-knob { transform: translateX(24px); background: #333333; }
-[data-theme="dark"] .theme-knob .icon-sun { display: none; }
-[data-theme="dark"] .theme-knob .icon-moon { display: block; }
+[data-theme="dark"] .theme-knob { transform: translateX(28px); background: #333333; }
+[data-theme="dark"] .theme-knob .icon-sun { display: block; }
+[data-theme="dark"] .theme-knob .icon-moon { display: none; }
 
 /* ---------- News ticker ---------- */
 .ticker {
@@ -378,9 +376,9 @@ button { font: inherit; }
   }
   .main-nav.open { display: flex; }
   .main-nav a { padding: 0.5rem 0.2rem; font-size: 1rem; }
-  .hero { min-height: 430px; max-height: 78svh; }
+  .hero { min-height: 0; aspect-ratio: 16 / 10.5; max-height: 380px; }
   .hero-slide img.hero-bg { object-position: center 30%; }
-  .hero-content { padding: 6rem 1rem 1.9rem; }
+  .hero-content { padding: 3.2rem 1rem 2.3rem; }
   .hero-content h1 { font-size: clamp(1.5rem, 6vw, 1.9rem); line-height: 1.4; }
   .hero-content p { font-size: 0.94rem; line-height: 1.55; }
   .hero-content .hero-byline { font-size: 0.9rem; }
