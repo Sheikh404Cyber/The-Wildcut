@@ -191,6 +191,11 @@ button { font: inherit; }
   opacity: 0; pointer-events: none; transition: opacity 0.85s ease;
 }
 .hero-slide.is-active { opacity: 1; pointer-events: auto; z-index: 1; }
+.hero-media { display: contents; }
+/* The whole slide is a link; in dark mode the generic link colour must
+   never wash the banner text green. */
+[data-theme="dark"] .hero-slide { color: #fff; }
+[data-theme="dark"] .hero-content h1 { color: #fff; }
 .hero-slide:hover { text-decoration: none; }
 .hero-slide img.hero-bg {
   position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center 28%;
@@ -376,10 +381,24 @@ button { font: inherit; }
   }
   .main-nav.open { display: flex; }
   .main-nav a { padding: 0.5rem 0.2rem; font-size: 1rem; }
-  .hero { min-height: 0; aspect-ratio: 16 / 10.5; max-height: 380px; }
-  .hero-slide img.hero-bg { object-position: center 30%; }
-  .hero-content { padding: 3.2rem 1rem 2.3rem; }
-  .hero-content h1 { font-size: clamp(1.5rem, 6vw, 1.9rem); line-height: 1.4; }
+  /* Mobile banner = stacked card: full 16:9 photo on top, headline block
+     below it — nothing overlays the photo, nothing gets clipped. */
+  .hero { min-height: calc(56.25vw + 190px); max-height: none; aspect-ratio: auto; background: #050f02; }
+  .hero-slide { display: flex; flex-direction: column; }
+  .hero-slide:first-child { position: relative; }
+  .hero-media { display: block; position: relative; aspect-ratio: 16 / 9; flex: 0 0 auto; overflow: hidden; }
+  .hero-media img.hero-bg { position: absolute; inset: 0; animation: none; object-position: center 30%; }
+  .hero-slide::after { display: none; }
+  .hero-content {
+    position: relative; flex: 1 1 auto; animation: none;
+    padding: 0.85rem 1rem 2.1rem;
+    background: linear-gradient(180deg, #0a2005, #050f02);
+  }
+  .hero-content h1 {
+    font-size: clamp(1.32rem, 5.4vw, 1.6rem); line-height: 1.38;
+    display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+  }
+  .hero-excerpt { display: none; }
   .hero-content p { font-size: 0.94rem; line-height: 1.55; }
   .hero-content .hero-byline { font-size: 0.9rem; }
   .hero-content time { font-size: 0.85rem; }
